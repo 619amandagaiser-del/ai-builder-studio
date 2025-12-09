@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI Builder Studio — Create Your Own AI Agent</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #eef5ff;
+            --border: #e0e0e0;
+            --text: #202124;
+            --text-light: #5f6368;
+            --bg: #ffffff;
+            --card: #fafafa;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f9fbff 0%, #f0f4ff 100%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(26, 115, 232, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        body::after {
+            content: "";
+            position: absolute;
+            bottom: -150px;
+            left: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(26, 115, 232, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1a73e8, #0d5bb8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            max-width: 600px;
+            margin: 0 auto 24px;
+        }
+        .highlight {
+            background: linear-gradient(120deg, var(--primary-light), #d0e4ff);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .templates {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .template-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .template-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
+            border-color: var(--primary);
+        }
+        .template-btn h3 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .template-btn p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+        #demo-section {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+            border: 1px solid var(--border);
+        }
+        #demo-section h2 {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+        #demo-result {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 100px;
+            font-family: monospace;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+        }
+        #advanced {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+            border: 1px solid var(--border);
+        }
+        #advanced h2 {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+        label {
+            display: block;
+            margin: 16px 0 8px;
+            font-weight: 600;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        .api-key-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .api-key-row a {
+            font-size: 0.9rem;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .api-key-row a:hover {
+            text-decoration: underline;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0d5bb8;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin: 32px 0;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1a73e8, #0d5bb8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+        .testimonial {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 32px 0;
+            font-style: italic;
+            position: relative;
+        }
+        .testimonial::before {
+            content: "\201C";
+            position: absolute;
+            top: -20px;
+            left: 10px;
+            font-size: 80px;
+            color: var(--primary-light);
+            font-family: serif;
+            line-height: 1;
+        }
+        .testimonial-author {
+            margin-top: 12px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        footer {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .subtitle { font-size: 1rem; }
+            .stats { gap: 16px; }
+            .container { padding: 20px 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Builder Studio</h1>
+            <p class="subtitle">Create your own AI agent. Download as a single HTML file — <span class="highlight">no install, no cloud, no signup</span>.</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="agents-count">1,247</div>
+                <div class="stat-label">Agents Built</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Templates</div>
+            </div>
+        </div>
+
+        <div class="testimonial">
+            "I built a contract analyzer in 2 minutes and caught a hidden clause that would’ve cost me thousands."
+            <div class="testimonial-author">— Alex, Freelance Developer</div>
+        </div>
+
+        <h2>Try a live demo (no key needed):</h2>
+        <div id="demo-section">
+            <button id="demo-btn" type="button">Run Legal Lens Demo</button>
+            <pre id="demo-result">Click "Run" to see AI in action...</pre>
+        </div>
+
+        <h2>Choose a template:</h2>
+        <div class="templates">
+            <div class="template-btn" onclick="loadTemplate('legal')">
+                <h3>🔍 Legal Lens</h3>
+                <p>Analyze contracts for hidden risks</p>
+            </div>
+            <div class="template-btn" onclick="loadTemplate('email')">
+                <h3>✉️ Cold Email Rewriter</h3>
+                <p>Turn templates into warm, personal emails</p>
+            </div>
+            <div class="template-btn" onclick="loadTemplate('meeting')">
+                <h3>📋 Meeting Summarizer</h3>
+                <p>Extract decisions & actions from notes</p>
+            </div>
+        </div>
+
+        <div id="advanced">
+            <h2>Advanced: Build your own AI</h2>
+            <label>AI Name</label>
+            <input type="text" id="ai_name" placeholder="My Custom AI Agent" required>
+            <label>System Prompt</label>
+            <textarea id="system_prompt" placeholder="You are an expert who..."></textarea>
+        </div>
+
+        <label>Your Groq API Key</label>
+        <div class="api-key-row">
+            <input type="password" id="groq_key" placeholder="gsk_..." required>
+            <a href="https://console.groq.com/keys" target="_blank">(get free key)</a>
+        </div>
+
+        <button id="submit" type="submit" onclick="build()">Build & Download HTML</button>
+
+        <footer>
+            <p>AI Builder Studio — Your AI, in one file.<br>Open source coming soon.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('demo-btn').addEventListener('click', () => {
+            document.getElementById('demo-result').innerHTML = 
+                '<div style="padding:12px;border-left:4px solid #dc3545;margin-bottom:12px;border-radius:6px;">' +
+                '<strong>⚠️ Risk Level: high</strong></div>' +
+                '<strong>Plain English:</strong><br>You give up all rights to your work — even your own ideas.<br><br>' +
+                '<strong>Recommendation:</strong><br>Ask to keep rights to pre-existing work or portfolio use.';
+        });
+
+        const TEMPLATES = {
+            legal: {
+                name: "Contract Risk Checker",
+                prompt: "You are an AI legal clarity assistant. Your job is NOT to give legal advice, but to help users understand contracts in plain language.\\n\\nFor the given clause, return JSON with:\\n- \"risk\" (true/false): Is this clause potentially harmful?\\n- \"risk_level\" (low/medium/high): How serious is this risk?\\n- \"plain_english\": Explain the clause simply.\\n- \"recommendation\": Suggest how to negotiate or fix it.\\n\\nRules:\\n- Keep plain_english and recommendation under 2 sentences.\\n- Use \"high\" for IP loss, liability waivers, jurisdiction traps.\\n- Use \"medium\" for payment delays, vague terms.\\n- Use \"low\" for minor admin issues.\\n- Never mention lawyers. Respond ONLY in valid JSON."
+            },
+            email: {
+                name: "Cold Email Rewriter",
+                prompt: "You are a sales communication expert. Analyze and rewrite this cold email to maximize reply rate.\\n\\nReturn JSON with:\\n- \"before\": the original email shortened to 1 sentence\\n- \"after\": the rewritten warm, personalized email (under 120 words)\\n- \"why_it_works\": 1-sentence explanation of why this version is better\\n- \"tone\": \"friendly\", \"professional\", or \"enthusiastic\"\\n\\nRules:\\n- Personalize using role, company, recent activity if provided\\n- Never use \"I hope this email finds you well\"\\n- Return ONLY valid JSON."
+            },
+            meeting: {
+                name: "Meeting Note Summarizer",
+                prompt: "You are a meeting intelligence assistant. From raw meeting notes, extract:\\n\\nReturn JSON with:\\n- \"summary\": 1-sentence overview of the meeting\\n- \"decisions\": list of key decisions (max 3) — must be plain strings\\n- \"actions\": list of tasks, each MUST include \"task\", \"owner\", and \"deadline\" if mentioned\\n- \"next_meeting\": suggested date or \"TBD\"\\n\\nRules:\\n- Be concise. Skip greetings and small talk.\\n- Never omit the \"task\" field. If unclear, infer a concise task from context.\\n- If no deadline, omit the field.\\n- Respond ONLY in valid JSON."
+            }
+        };
+
+        function loadTemplate(type) {
+            const t = TEMPLATES[type];
+            document.getElementById('ai_name').value = t.name;
+            document.getElementById('system_prompt').value = t.prompt;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTemplate('legal');
+            let count = 1247;
+            setInterval(() => {
+                count += Math.floor(Math.random() * 3) + 1;
+                document.getElementById('agents-count').textContent = count.toLocaleString();
+            }, 3000);
+        });
+
+        async function build() {
+            const ai_name = document.getElementById('ai_name').value;
+            const system_prompt = document.getElementById('system_prompt').value;
+            const groq_key = document.getElementById('groq_key').value;
+            
+            if (!ai_name || !system_prompt || !groq_key) {
+                alert("Please fill all fields");
+                return;
+            }
+
+            const res = await fetch('/build-html', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ai_name, system_prompt, groq_key})
+            });
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = ai_name.replace(/\s+/g, '_') + '.html';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

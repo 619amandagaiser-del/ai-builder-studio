@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ ai_name }}</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #fff;
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 16px;
+        }
+        .mode-toggle {
+            background: #f8f9fa;
+            padding: 14px;
+            border-radius: 10px;
+            margin: 16px 0;
+        }
+        .mode-toggle label {
+            margin-right: 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .mode-toggle a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 0.95em;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 15px;
+        }
+        button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #0d5bb8;
+        }
+        #result {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        .share-btn {
+            margin-top: 16px;
+            background: #34a853;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ ai_name }}</h1>
+    <p>Paste your input and click "Analyze".</p>
+    
+    <div class="mode-toggle">
+        <label><input type="radio" name="mode" value="cloud" checked> Cloud (Groq)</label>
+        <label><input type="radio" name="mode" value="local"> Local (Ollama)</label>
+        <br>
+        <a href="https://ollama.com" target="_blank">→ Install Ollama to use offline mode</a>
+    </div>
+
+    <textarea id="input" placeholder="Type your text here..."></textarea><br>
+    <button onclick="analyze()">Analyze</button>
+    <button class="share-btn" onclick="shareAgent()">Share this Agent</button>
+    <pre id="result">Result will appear here...</pre>
+
+    <script>
+        const GROQ_API_KEY = "{{ groq_key }}";
+        const SYSTEM_PROMPT = `{{ system_prompt }}`;
+
+        async function analyze() {
+            const text = document.getElementById("input").value.trim();
+            if (!text) return;
+            document.getElementById("result").textContent = "Thinking...";
+
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+
+            try {
+                let content;
+
+                if (mode === "cloud") {
+                    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": "Bearer " + GROQ_API_KEY,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            model: "llama-3.1-8b-instant",
+                            messages: [
+                                {"role": "system", "content": SYSTEM_PROMPT},
+                                {"role": "user", "content": text}
+                            ],
+                            temperature: 0.3,
+                            max_tokens: 500,
+                            response_format: {"type": "json_object"}
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error?.message || "Groq request failed");
+                    content = data.choices[0].message.content;
+                } else {
+                    const response = await fetch("http://localhost:11434/api/generate", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({
+                            model: "llama3.1",
+                            prompt: `${SYSTEM_PROMPT}\n\nUser: ${text}`,
+                            stream: false,
+                            options: {temperature: 0.3, num_predict: 500}
+                        })
+                    });
+                    if (!response.ok) throw new Error("Ollama not running");
+                    const data = await response.json();
+                    content = data.response;
+                }
+
+                const parsed = JSON.parse(content);
+
+                // === ОТПРАВКА РЕЗУЛЬТАТА ===
+                if (SYSTEM_PROMPT.includes('"risk"')) {
+                    let riskColor = "#6c757d";
+                    if (parsed.risk_level === "medium") riskColor = "#ffc107";
+                    if (parsed.risk_level === "high") riskColor = "#dc3545";
+                    document.getElementById("result").innerHTML = 
+                        `<div style="padding:12px;border-left:4px solid ${riskColor};margin-bottom:12px;border-radius:6px;">
+                            <strong>⚠️ Risk Level: ${parsed.risk_level || "low"}</strong>
+                        </div>
+                        <strong>Plain English:</strong><br>${parsed.plain_english}<br><br>
+                        <strong>Recommendation:</strong><br>${parsed.recommendation}`;
+                } 
+                else if (SYSTEM_PROMPT.includes('"before"')) {
+                    let toneColor = "#1a73e8";
+                    if (parsed.tone === "enthusiastic") toneColor = "#34a853";
+                    else if (parsed.tone === "professional") toneColor = "#fbbc05";
+                    document.getElementById("result").innerHTML = 
+                        `<div style="padding:12px;border-left:4px solid ${toneColor};margin-bottom:12px;border-radius:6px;">
+                            <strong>📧 Tone: ${parsed.tone}</strong>
+                        </div>
+                        <strong>Before:</strong><br>${parsed.before}<br><br>
+                        <strong>After:</strong><br>${parsed.after}<br><br>
+                        <strong>Why it works:</strong> ${parsed.why_it_works}`;
+                } 
+                else if (SYSTEM_PROMPT.includes('"summary"')) {
+                    let html = `<strong>📋 Meeting Summary:</strong><br>${parsed.summary}<br><br>`;
+                    html += `<strong>✅ Key Decisions:</strong><ul>`;
+                    (parsed.decisions || []).forEach(d => html += `<li>${d}</li>`);
+                    html += `</ul>`;
+                    html += `<strong>🛠️ Action Items:</strong><ul>`;
+                    (parsed.actions || []).forEach(a => {
+                        const deadline = a.deadline ? ` (by ${a.deadline})` : '';
+                        html += `<li><strong>${a.owner}</strong>: ${a.task}${deadline}</li>`;
+                    });
+                    html += `</ul>`;
+                    html += `<strong>📅 Next Meeting:</strong> ${parsed.next_meeting}`;
+                    document.getElementById("result").innerHTML = html;
+                } 
+                else {
+                    document.getElementById("result").textContent = content;
+                }
+
+            } catch (e) {
+                let msg = e.message || String(e);
+                if (msg.includes("Failed to fetch") && mode === "local") {
+                    document.getElementById("result").textContent = "🌐 Ollama is not running. Please start Ollama and try again.";
+                } else {
+                    document.getElementById("result").textContent = "❌ Error: " + msg;
+                }
+            }
+        }
+
+        function shareAgent() {
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({
+                    title: "{{ ai_name }}",
+                    text: "Check out this AI agent I built with AI Builder Studio!",
+                    url: url
+                });
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    alert("Link copied to clipboard!");
+                });
+            }
+        }
+    </script>
+</body>
+</html>
