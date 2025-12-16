@@ -1,0 +1,78 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyP5Ytsc5YVjM9O/JOPC4Nmn",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/f-fro/ai-builder-studio/blob/main/test_QDIM\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 3,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "9a2c7nlfNc9v",
+        "outputId": "b09e38b7-bc95-45c9-986c-094e2c76ff0b"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "[🎉] СИМУЛЯЦИЯ ЗАВЕРШЕНА. АТАКИ ОТРАЖЕНЫ.\n"
+          ]
+        }
+      ],
+      "source": [
+        "# QDIM-SIMULADOR БЕЗ ВЛОЖЕНИЙ\n",
+        "import time\n",
+        "import random\n",
+        "from IPython.display import clear_output\n",
+        "\n",
+        "print(\"[🛡️] ЗАПУСК QDIM-SIM...\")\n",
+        "nodes = [\"192.168.1.10\", \"192.168.1.11\", \"192.168.1.12\"]\n",
+        "attackers = [\"10.5.5.5\", \"192.168.99.99\"]\n",
+        "\n",
+        "for second in range(10):\n",
+        "    # Сеть перестраивается каждую секунду\n",
+        "    random.shuffle(nodes)\n",
+        "\n",
+        "    # Имитация атаки\n",
+        "    if random.random() > 0.7:\n",
+        "        attacker = random.choice(attackers)\n",
+        "        target = random.choice(nodes)\n",
+        "        print(f\"[🔥] Атака от {attacker} на {target}!\")\n",
+        "        print(f\"[🛡️] QDIM: Перенаправлено в ловушку!\")\n",
+        "    else:\n",
+        "        print(f\"[✅] Сеть стабильна: {nodes}\")\n",
+        "\n",
+        "    time.sleep(1)\n",
+        "    clear_output(wait=True)  # Чистит экран для анимации\n",
+        "\n",
+        "print(\"[🎉] СИМУЛЯЦИЯ ЗАВЕРШЕНА. АТАКИ ОТРАЖЕНЫ.\")"
+      ]
+    }
+  ]
+}
